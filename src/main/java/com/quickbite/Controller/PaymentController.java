@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.quickbite.DTO.PaymentDTO;
 import com.quickbite.Service.PaymentService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -21,7 +22,7 @@ public class PaymentController {
     // CREATE PAYMENT
     @PostMapping
     public PaymentDTO createPayment(
-            @RequestBody PaymentDTO dto) {
+            @Valid @RequestBody PaymentDTO dto) {
 
         return paymentService.createPayment(dto);
     }

@@ -50,6 +50,17 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
 
                 // =========================
+                // SWAGGER + ACTUATOR (public docs/health)
+                // =========================
+                .requestMatchers(
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/api-docs/**",
+                    "/actuator/health",
+                    "/actuator/info"
+                ).permitAll()
+
+                // =========================
                 // AUTHENTICATION APIs
                 // =========================
                 .requestMatchers("/api/auth/**").permitAll()
@@ -113,12 +124,12 @@ public class SecurityConfig {
                 ).authenticated()
 
                 // =========================
-                // MENU ITEM APIs
+                // MENU ITEM APIs (browse public, modify auth)
                 // =========================
                 .requestMatchers(
                     HttpMethod.GET,
                     "/api/menu-items/**"
-                ).authenticated()
+                ).permitAll()
 
                 .requestMatchers(
                     HttpMethod.POST,
@@ -210,12 +221,13 @@ public class SecurityConfig {
     // CORS CONFIGURATION
     // =========================
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(
+            @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:5173}") String origins) {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-            Arrays.asList("http://localhost:5173")
+            Arrays.asList(origins.split(","))
         );
 
         configuration.setAllowedMethods(

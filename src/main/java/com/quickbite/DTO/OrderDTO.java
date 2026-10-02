@@ -2,9 +2,13 @@ package com.quickbite.DTO;
 
 import java.math.BigDecimal;
 
+import jakarta.validation.constraints.NotNull;
+
 public class OrderDTO {
 
     private Long id;
+
+    @NotNull(message = "userId is required")
     private Long userId;
     private BigDecimal totalAmount;
     private String status;

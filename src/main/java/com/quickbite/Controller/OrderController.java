@@ -17,10 +17,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.quickbite.DTO.OrderDTO;
 import com.quickbite.Service.OrderService;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
 
     private final OrderService orderService;
 
@@ -30,7 +35,7 @@ public class OrderController {
 
     // CREATE ORDER
     @PostMapping
-    public OrderDTO createOrder(@RequestBody OrderDTO orderDTO) {
+    public OrderDTO createOrder(@Valid @RequestBody OrderDTO orderDTO) {
 
         return orderService.createOrder(orderDTO);
     }
@@ -81,10 +86,7 @@ public class OrderController {
             @PathVariable Long id,
             @RequestParam String status) {
 
-        System.out.println("========== UPDATE ORDER STATUS ==========");
-        System.out.println("CONTROLLER HIT");
-        System.out.println("ORDER ID = " + id);
-        System.out.println("STATUS = " + status);
+        log.info("Update order status id={} status={}", id, status);
 
         return orderService.updateOrderStatus(id, status);
     }
@@ -95,9 +97,7 @@ public class OrderController {
             @PathVariable Long id,
             @RequestParam Long userId) {
 
-        System.out.println("========== CANCEL ORDER ==========");
-        System.out.println("ORDER ID = " + id);
-        System.out.println("USER ID = " + userId);
+        log.info("Cancel order id={} userId={}", id, userId);
 
         return orderService.cancelOrder(id, userId);
     }
@@ -124,7 +124,7 @@ public class OrderController {
     @PutMapping("/{id}")
     public OrderDTO updateOrder(
             @PathVariable Long id,
-            @RequestBody OrderDTO orderDTO) {
+            @Valid @RequestBody OrderDTO orderDTO) {
 
         return orderService.updateOrder(id, orderDTO);
     }

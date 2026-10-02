@@ -9,8 +9,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.quickbite.Common.OrderStatus;
 import com.quickbite.DTO.OrderDTO;
 import com.quickbite.Entity.Order;
 import com.quickbite.Repository.OrderRepository;
@@ -51,6 +53,7 @@ public class OrderService {
     }
 
     // CREATE ORDER FROM CART
+    @Transactional
     public OrderDTO createOrder(OrderDTO orderDTO) {
 
         Long userId = orderDTO.getUserId();
@@ -106,6 +109,7 @@ public class OrderService {
     }
 
     // UPDATE COMPLETE ORDER
+    @Transactional
     public OrderDTO updateOrder(Long id, OrderDTO orderDTO) {
 
         Order order = orderRepository.findById(id)
@@ -119,7 +123,7 @@ public class OrderService {
         order.setUserId(orderDTO.getUserId());
         order.setTotalAmount(orderDTO.getTotalAmount());
 
-        validateStatus(orderDTO.getStatus());
+        validateTransition(order.getStatus(), orderDTO.getStatus());
 
         order.setStatus(orderDTO.getStatus());
 
@@ -129,6 +133,7 @@ public class OrderService {
     }
 
     // CANCEL ORDER
+    @Transactional
     public OrderDTO cancelOrder(Long id, Long userId) {
 
         Order order = orderRepository.findById(id)
@@ -196,6 +201,7 @@ public class OrderService {
     }
 
     // UPDATE ORDER STATUS
+    @Transactional
     public OrderDTO updateOrderStatus(Long id, String status) {
 
         Order order = orderRepository.findById(id)
@@ -206,7 +212,7 @@ public class OrderService {
                     )
                 );
 
-        validateStatus(status);
+        validateTransition(order.getStatus(), status);
 
         order.setStatus(status);
 
@@ -218,15 +224,24 @@ public class OrderService {
     // VALIDATE ORDER STATUS
     private void validateStatus(String status) {
 
-        if (!"PLACED".equals(status)
-                && !"PREPARING".equals(status)
-                && !"OUT_FOR_DELIVERY".equals(status)
-                && !"DELIVERED".equals(status)
-                && !"CANCELLED".equals(status)) {
+        if (!OrderStatus.isValid(status)) {
 
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Invalid order status: " + status
+            );
+        }
+    }
+
+    private void validateTransition(String from, String to) {
+
+        validateStatus(to);
+
+        if (!OrderStatus.canTransition(from, to)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot change order from " + from + " to " + to
             );
         }
     }

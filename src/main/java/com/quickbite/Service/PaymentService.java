@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
@@ -29,7 +30,16 @@ public class PaymentService {
     }
 
     // CREATE PAYMENT
+    @Transactional
     public PaymentDTO createPayment(PaymentDTO dto) {
+
+        if (dto.getOrderId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "orderId is required");
+        }
+
+        validateMethod(dto.getPaymentMethod());
 
         // Find order
         Order order = orderRepository.findById(dto.getOrderId())
@@ -39,6 +49,21 @@ public class PaymentService {
                         "Order not found with id: " + dto.getOrderId()
                     )
                 );
+
+        if ("CANCELLED".equals(order.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot pay for a cancelled order");
+        }
+
+        // Idempotency: return existing SUCCESS payment instead of double-charging
+        List<PaymentDTO> existing = getPaymentsByOrderId(order.getId())
+                .stream()
+                .filter(p -> "SUCCESS".equals(p.getPaymentStatus()))
+                .toList();
+        if (!existing.isEmpty()) {
+            return existing.get(0);
+        }
 
         // Create payment
         Payment payment = new Payment();
@@ -120,5 +145,13 @@ public class PaymentService {
                 payment.getPaymentMethod(),
                 payment.getPaymentStatus()
         );
+    }
+
+    private void validateMethod(String method) {
+        if (!"UPI".equals(method) && !"CARD".equals(method) && !"CASH".equals(method)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid payment method: " + method + ". Use UPI, CARD or CASH");
+        }
     }
 }

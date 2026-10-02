@@ -102,4 +102,47 @@ public class GlobalExceptionHandler {
                 ex.getStatusCode()
         );
     }
+
+    // DATABASE CONFLICTS (duplicate keys, constraints)
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+
+        ErrorResponse error = new ErrorResponse(
+                409,
+                "Data conflict: " + mostSpecificMessage(ex)
+        );
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.CONFLICT
+        );
+    }
+
+    // FALLBACK — never leak stack traces to clients
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
+
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
+                .error("Unhandled error", ex);
+
+        ErrorResponse error = new ErrorResponse(
+                500,
+                "Something went wrong. Please try again."
+        );
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    private String mostSpecificMessage(Exception ex) {
+        Throwable root = ex;
+        while (root.getCause() != null) {
+            root = root.getCause();
+        }
+        String msg = root.getMessage();
+        return msg != null && msg.length() > 200 ? msg.substring(0, 200) : msg;
+    }
 }

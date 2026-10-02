@@ -3,12 +3,18 @@ package com.quickbite.DTO;
 
 import java.math.BigDecimal;
 
+import jakarta.validation.constraints.NotNull;
+
 public class PaymentDTO {
 
     private Long id;
+
+    @NotNull(message = "orderId is required")
     private Long orderId;
     private Long userId;
     private BigDecimal amount;
+
+    @NotNull(message = "paymentMethod is required")
     private String paymentMethod;
     private String paymentStatus;
 
